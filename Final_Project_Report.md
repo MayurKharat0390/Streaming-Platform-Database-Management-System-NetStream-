@@ -134,13 +134,83 @@ The system architecture (3NF) should be designed to support a rapidly growing li
     *   IDE: VS Code.
 
 ### 2.2 ER Model
-The ER Model consists of the following key entities:
-*   **Users:** (PK: user_id) - User identity.
-*   **Content:** (PK: content_id) - Movies and Series details.
-*   **Genres:** (PK: genre_id) - Categories.
-*   **Subscriptions:** (PK: plan_id) - Plan metadata.
-*   **Watch_History:** Logs of content consumption.
-*   **Ratings:** User feedback on content.
+
+The Entity-Relationship (ER) Model defines the structural architecture of the **NetStream** system. It captures how users interact with content, subscriptions, and feedback mechanisms.
+
+#### Visual ER Diagram (Crow's Foot Notation)
+```mermaid
+erDiagram
+    Users ||--o{ User_Subscriptions : "purchases"
+    Subscriptions ||--o{ User_Subscriptions : "defines"
+    Users ||--o{ Watch_History : "watches"
+    Content ||--o{ Watch_History : "is_recorded_in"
+    Users ||--o{ Ratings : "provides"
+    Content ||--o{ Ratings : "receives"
+    Content }|--|{ Genres : "belongs_to"
+
+    Users {
+        int user_id PK
+        string username
+        string email
+        string password
+        timestamp created_at
+    }
+
+    Subscriptions {
+        int plan_id PK
+        string plan_name
+        decimal price
+        int duration_months
+    }
+
+    User_Subscriptions {
+        int sub_id PK
+        int user_id FK
+        int plan_id FK
+        date start_date
+        date end_date
+        enum status
+    }
+
+    Content {
+        int content_id PK
+        string title
+        enum type
+        int release_year
+        int duration_min
+        string director
+        text description
+    }
+
+    Genres {
+        int genre_id PK
+        string genre_name
+    }
+
+    Watch_History {
+        int history_id PK
+        int user_id FK
+        int content_id FK
+        timestamp watched_at
+    }
+
+    Ratings {
+        int rating_id PK
+        int user_id FK
+        int content_id FK
+        int rating
+        text review
+        timestamp rated_at
+    }
+```
+
+**Key Entities & Attributes:**
+*   **Users:** (PK: user_id) - Stores identity and authentication details.
+*   **Content:** (PK: content_id) - Comprehensive metadata for Movies and Series.
+*   **Genres:** (PK: genre_id) - Classification labels for categorization.
+*   **Subscriptions:** (PK: plan_id) - Master data for pricing and tiers.
+*   **Watch_History:** Transactional log of user-content interaction.
+*   **Ratings:** Feedback repository for quality assessment.
 
 **Relationships:**
 *   **Many-to-Many:** Content and Genres (via `Content_Genre`).
@@ -158,44 +228,49 @@ The ER Model consists of the following key entities:
 *   **Watch_History**(history_id, user_id, content_id, watched_at)
 *   **Ratings**(rating_id, user_id, content_id, rating, review, rated_at)
 
-### 2.4 Normalization
+### 2.4 Normalization (The Path to Efficiency)
 
-#### Unnormalized Form (UNF)
-Initially, streaming platform data might appear as a single flat file or spreadsheet containing:
-**User, Email, Plan_Name, Price, Content_Title, Director, Genre_List, Rating**
+Normalization is the process of organizing data to minimize redundancy and avoid anomalies. We have followed a rigorous normalization path up to **3NF**.
 
-**Problems:**
-*   **Duplicate User Data:** User emails repeated for every movie watched.
-*   **Repeated Content Info:** Director names repeated for every user who rated a movie.
-*   **Update Anomalies:** Changing a Plan's price requires updating thousands of user records.
-*   **Multi-valued Attributes:** `Genre_List` often contains multiple values (e.g., "Action, Sci-Fi") in a single cell.
+#### 1. Unnormalized Form (UNF)
+Initially, data exists in a flat, multi-valued state.
+| User | Email | Subscription | Genre_List | Content_Watched |
+| :--- | :--- | :--- | :--- | :--- |
+| John | j@ex.com | Basic, $9.99 | Action, Sci-Fi | Inception, Matrix |
 
-#### First Normal Form (1NF)
-Each column must contain atomic values. Repeating groups and multi-valued attributes are removed.
+**Problems:** 
+* **Multi-valued attributes** (Genre_List) make searching impossible.
+* **Redundancy:** User info repeats for every watch event.
 
-**Example:**
-Instead of `Genres: "Action, Sci-Fi"`, we split them into individual records.
-*   **Tables created:** `Genres`, `Users`, `Content`.
+#### 2. First Normal Form (1NF)
+Removed multi-valued attributes and ensured atomicity.
+| User | Email | Subscription | Genre | Content |
+| :--- | :--- | :--- | :--- | :--- |
+| John | j@ex.com | Basic | Action | Inception |
+| John | j@ex.com | Basic | Sci-Fi | Inception |
 
-#### Second Normal Form (2NF)
-Partial dependencies are removed. All non-key attributes must depend on the entire primary key.
-**Example:**
-Content information (Title, Director) is stored only in the `Content` table, not repeated in the `Watch_History` or `Ratings` tables.
+**Observation:** Atomic values are achieved, but **Partial Dependency** exists (Email depends only on User, not the entire composite key of User+Content).
 
-*   **Tables created:** `Content`, `Watch_History`, `Ratings`.
+#### 3. Second Normal Form (2NF)
+Removed partial dependencies by splitting into separate entities. Each table now represents a single concept.
+*   **User Table:** [User, Email]
+*   **Content Table:** [Content, Genre]
+*   **Watch Table:** [User, Content]
 
-#### Third Normal Form (3NF)
-Transitive dependencies are removed. A non-key attribute should not depend on another non-key attribute.
-**Example:**
-Instead of storing Subscription Plan details (Price, Duration) directly in the `User_Subscriptions` table, they are moved to a separate `Subscriptions` master table. This prevents data dependency on the user record.
+**Observation:** Redundancy is reduced. However, **Transitive Dependency** remains (Subscription Price depends on Subscription Name, which in turn relates to the User).
 
-*   **Tables created:** `Subscriptions`, `User_Subscriptions`, `Content_Genre`.
+#### 4. Third Normal Form (3NF)
+Removed transitive dependencies. Non-key attributes (Price) now depend strictly on the Primary Key of their own master table (`Subscriptions`).
 
-#### Result of Normalization
-*   **Reduced Redundancy:** Data is stored in exactly one place.
-*   **Improved Consistency:** Updates to a genre or plan reflect instantly across the system.
-*   **Efficient Data Retrieval:** Smaller tables lead to faster index lookups.
-*   **Easier Maintenance:** Clear separation between "Master" data (Users, Content) and "Transaction" data (History, Ratings).
+**Final Architecture Result:**
+*   **Master Tables:** `Users`, `Content`, `Genres`, `Subscriptions`.
+*   **Transaction Tables:** `Watch_History`, `Ratings`.
+*   **Bridge Tables (M:N):** `Content_Genre`, `User_Subscriptions`.
+
+#### Avoidance of Data Anomalies:
+*   **Insertion Anomaly:** We can now add a new `Genre` or `Subscription Plan` even if no user has used it yet.
+*   **Update Anomaly:** If the price of "Premium" changes, we update **one** row in `Subscriptions`, not thousands of rows in a flat file.
+*   **Deletion Anomaly:** Deleting an expired user record does not delete the `Content` metadata from the system.
 
 The database is fully normalized up to **Third Normal Form (3NF)**.
 

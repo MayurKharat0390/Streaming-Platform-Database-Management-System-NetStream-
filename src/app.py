@@ -190,7 +190,7 @@ with header_col3:
     """, unsafe_allow_html=True)
 
 # Create Navigation Tabs at the top
-tabs = st.tabs(["📊 Dashboard", "👥 Users", "💳 Plans", "🎥 Content", "🏷️ Genres", "📜 History", "⭐ Ratings"])
+tabs = st.tabs(["📊 Dashboard", "👥 Users", "💳 Plans", "🎥 Content", "🏷️ Genres", "📜 History", "⭐ Ratings", "🖥️ SQL Results"])
 
 # --- RENDER TABS ---
 
@@ -427,3 +427,65 @@ with tabs[6]:
     ratings = queries.get_ratings_with_details()
     if ratings:
         st.dataframe(pd.DataFrame(ratings), use_container_width=True)
+
+# 8. SQL RESULTS (FOR REPORT)
+with tabs[7]:
+    st.header("SQL Query Verification Results")
+    st.info("This tab displays the raw output of the 15 DML queries mentioned in the report.")
+    
+    # 5. Display all users
+    st.subheader("Query 5: SELECT * FROM Users")
+    st.dataframe(pd.DataFrame(queries.get_all_users()), use_container_width=True)
+    
+    # 6. Find content from a specific year
+    st.subheader("Query 6: SELECT title FROM Content WHERE release_year = 2024")
+    q6 = "SELECT title FROM Content WHERE release_year = 2024"
+    st.table(pd.DataFrame(queries.execute_query(q6, fetch=True)))
+    
+    # 9. Count users created each month
+    st.subheader("Query 9: Monthly User Count (Group By)")
+    q9 = "SELECT DATE_FORMAT(created_at, '%Y-%m') AS Month, COUNT(*) AS Total_Users FROM Users GROUP BY Month"
+    st.table(pd.DataFrame(queries.execute_query(q9, fetch=True)))
+    
+    # 10. Find content with more than 5 ratings
+    st.subheader("Query 10: Content with > 5 Ratings (Having)")
+    q10 = "SELECT content_id, COUNT(rating_id) as rating_count FROM Ratings GROUP BY content_id HAVING COUNT(rating_id) > 5"
+    res10 = queries.execute_query(q10, fetch=True)
+    if res10: st.table(pd.DataFrame(res10))
+    else: st.write("No record found with > 5 ratings yet.")
+    
+    # 11 & 12. Aggregations
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.subheader("Query 11: AVG Rating")
+        q11 = "SELECT AVG(rating) AS Average_Platform_Rating FROM Ratings"
+        st.metric("Global Avg", round(queries.execute_query(q11, fetch=True)[0]['Average_Platform_Rating'], 2))
+    with col_b:
+        st.subheader("Query 12: MAX Rating")
+        q12 = "SELECT MAX(rating) AS Highest_Rating FROM Ratings"
+        st.metric("Highest Star", queries.execute_query(q12, fetch=True)[0]['Highest_Rating'])
+        
+    # 13. Join Users and Ratings
+    st.subheader("Query 13: Join (Who rated What)")
+    q13 = """
+    SELECT u.username, c.title, r.rating 
+    FROM Ratings r
+    JOIN Users u ON r.user_id = u.user_id
+    JOIN Content c ON r.content_id = c.content_id
+    """
+    st.dataframe(pd.DataFrame(queries.execute_query(q13, fetch=True)), use_container_width=True)
+    
+    # 14. Join Content and Genres
+    st.subheader("Query 14: Join (Content + Genres)")
+    q14 = """
+    SELECT c.title, g.genre_name 
+    FROM Content_Genre cg
+    JOIN Content c ON cg.content_id = c.content_id
+    JOIN Genres g ON cg.genre_id = g.genre_id
+    """
+    st.dataframe(pd.DataFrame(queries.execute_query(q14, fetch=True)), use_container_width=True)
+    
+    # 15. Total revenue per plan
+    st.subheader("Query 15: Total Revenue (Sum + Group By)")
+    q15 = "SELECT plan_id, SUM(price) as Total_Revenue FROM Subscriptions GROUP BY plan_id"
+    st.table(pd.DataFrame(queries.execute_query(q15, fetch=True)))
