@@ -562,27 +562,27 @@ The following screenshots illustrate the interactive Streamlit interface of the 
 
 #### 1. Dashboard Module
 The dashboard provides a high-level overview of the platform, including global audience size, library statistics, and trending content.
-![Dashboard Screenshot](/C:/Users/MAYUR KHARAT/.gemini/antigravity/brain/d342edb2-7c4b-4cf4-8c7f-f859b255bcff/dashboard.png)
+![Dashboard Screenshot](report_images/dashboard.png)
 
 #### 2. User Management
 This module allows administrators to view, add, and manage user profiles.
-![User Management Screenshot](/C:/Users/MAYUR KHARAT/.gemini/antigravity/brain/d342edb2-7c4b-4cf4-8c7f-f859b255bcff/users.png)
+![User Management Screenshot](report_images/users.png)
 
 #### 3. Subscription Plans
 Managing subscription tiers and user assignments.
-![Subscription Plans Screenshot](/C:/Users/MAYUR KHARAT/.gemini/antigravity/brain/d342edb2-7c4b-4cf4-8c7f-f859b255bcff/plans.png)
+![Subscription Plans Screenshot](report_images/plans.png)
 
 #### 4. Content Library
 The interface for searching and exploring the movies and series database.
-![Content Library Screenshot](/C:/Users/MAYUR KHARAT/.gemini/antigravity/brain/d342edb2-7c4b-4cf4-8c7f-f859b255bcff/content.png)
+![Content Library Screenshot](report_images/content.png)
 
 #### 5. Watch History
 Real-time logs of user consumption activity retrieved via SQL Joins.
-![Watch History Screenshot](/C:/Users/MAYUR KHARAT/.gemini/antigravity/brain/d342edb2-7c4b-4cf4-8c7f-f859b255bcff/history.png)
+![Watch History Screenshot](report_images/history.png)
 
 #### 6. Ratings and Reviews
 User feedback and aggregated average scores for content.
-![Ratings Screenshot](/C:/Users/MAYUR KHARAT/.gemini/antigravity/brain/d342edb2-7c4b-4cf4-8c7f-f859b255bcff/ratings.png)
+![Ratings Screenshot](report_images/ratings.png)
 
 ---
 
